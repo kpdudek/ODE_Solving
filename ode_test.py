@@ -46,7 +46,7 @@ plt.ylabel('Value')
 plt.title('Van Der Pol Differential Equation')
 
 
-
+print(sol1)
 
 plt.show()
 
