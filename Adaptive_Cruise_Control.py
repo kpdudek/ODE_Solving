@@ -30,7 +30,7 @@ m = 1650.0
 f0 = 0.1
 f1 = 5.0
 f2 = 0.25
-vd = 24.0
+vd = 100.0
 v0 = 13.89
 eps = 10.0
 gamma = 1.0
@@ -79,8 +79,8 @@ def controller(x):
 	n = H_acc.shape[1]
 
 
-	A_input = np.array([A_clf,A_cbf])
-	b_input = np.array([b_clf,b_cbf])
+	A_input = np.array([A_clf])#,A_cbf])
+	b_input = np.array([b_clf])#,b_cbf])
 	P = matrix(H_acc,tc='d')
 	q = matrix(F_acc,tc='d')
 	G = matrix(A_input,tc='d')
@@ -113,6 +113,7 @@ def ode_solver(TFinal):
 
 
 plt.plot(time,x)
+#plt.legend('Position','Velocity','delta Position','Leader Pos','Leader Velocity')
 
 plt.show()
 
