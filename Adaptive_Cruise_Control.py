@@ -10,6 +10,8 @@ import math
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.integrate import odeint
+from scipy.integrate import RK45
+from scipy.integrate import LSODA
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
 from mpl_toolkits.axes_grid1 import host_subplot
@@ -33,7 +35,7 @@ f2 = 0.25
 vd = 100.0
 v0 = 13.89
 eps = 10.0
-gamma = 1.0
+gamma = 1
 p_sc = 1e-5
 		
 
@@ -79,8 +81,8 @@ def controller(x):
 	n = H_acc.shape[1]
 
 
-	A_input = np.array([A_clf])#,A_cbf])
-	b_input = np.array([b_clf])#,b_cbf])
+	A_input = np.array([A_clf,A_cbf])
+	b_input = np.array([b_clf,b_cbf])
 	P = matrix(H_acc,tc='d')
 	q = matrix(F_acc,tc='d')
 	G = matrix(A_input,tc='d')
@@ -89,33 +91,37 @@ def controller(x):
 	
 	sol = solvers.qp(P,q,G,h)
 	u = (sol['x'])
+	print(u)
 	return u
 
 
-def control(x,t):
+def control(t,x):
 	u = controller(x)
 	return u	
 
 
-def ode_func(x,t):
-	dx = model(x,control(x,t))
+def ode_func(t,x):
+	dx = model(x,control(t,x))
 	return dx
 
 
 def ode_solver(TFinal):
 	time = np.linspace(0,TFinal,1000)
 	x_init = [900.0,20.0,100.0,1000.0,13.89]
-	x = odeint(ode_func,x_init,time)		
+	x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45',min_step=(.01))
+	#x = odeint(ode_func,x_init,time)
+	#x = RK45(ode_func,0,x_init,TFinal,max_step=.01)		
+	#x = LSODA(ode_func,0,x_init,TFinal,min_step=.01)
 	return x,time
 
 
 [x,time] = ode_solver(TFinal)
 
-
-plt.plot(time,x)
+print(x.t,x.y)
+#plt.plot(time,x)
 #plt.legend('Position','Velocity','delta Position','Leader Pos','Leader Velocity')
 
-plt.show()
+#plt.show()
 
 
 

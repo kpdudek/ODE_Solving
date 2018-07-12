@@ -46,7 +46,7 @@ plt.xlabel('Time')
 plt.ylabel('Value')
 plt.title('Van Der Pol Differential Equation')
 
-#print(sol1)
+print(sol1)
 
 
 
@@ -56,14 +56,14 @@ def exponential(y,t):
 
 t2 = np.linspace(0,5,100)
 y2 = [0]
-sol3 = LSODA(exponential,0,y2,5,max_step=1,min_step=.01)
+sol3 = LSODA(exponential,0,y2,5)
 
 plt.figure(3)
-plt.plot(sol3.t,sol3.y)
+plt.plot(sol3.t,sol3.x)
 plt.xlabel('Time')
 plt.ylabel('Value')
 plt.title('dy/dt = 2 * t')
-print(sol3.t,sol3.y)
+
 
 
 plt.show()
