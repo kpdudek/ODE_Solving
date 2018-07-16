@@ -27,34 +27,44 @@ global x0,TFinal,m,f0,f1,f2,vd,v0,eps,gamma,p_sc,Fr
 #Setting parameter values. Forcing type double to prevent computational errors
 x0 = np.array([[900.0],[20.0],[100.0],[1000.0],[13.89]])
 TFinal = 20
+
 #Setting values used by model and Controller
-m = 1650.0
-f0 = 0.1
-f1 = 5.0
-f2 = 0.25
-vd = 100.0
-v0 = 13.89
-eps = 10.0
-gamma = 1
-p_sc = 1e-5
+m = 1650.0 #mass kg
+f0 = 0.1  # Newton
+f1 = 5.0  # Newton*s/m
+f2 = 0.25  #Newton*s^2/m
+vd = 100.0  # m/s
+v0 = 13.89  # m/s
+eps = 10.0  # exp convergence rate for stability
+gamma = 1  # max growth rate of Bdot leq gamma
+p_sc = 1e-5  # relatation term compensation
 		
 
 def model(x,u):
 	# INPUTS
 	# x = state vector
-	#	x(0:2) = [pos, vel, distave of x(5) - x(1)
-	Fr = f0 + f1*x[1] + f2*x[1]**2
+	#	x[0:2] = [pos, vel, distave of x(5) - x(1)
+	#	x[3:4] = [pos, vel] of constant car (leader)
+	# u = control input into controlled car
+
+	# OUTPUTS:
+	#	dx = new states
+
+
+	Fr = f0 + f1*x[1] + f2*x[1]**2 # aerodynamic drag
 	
 	dx = [0,1,2,3,4]#np.empty([5,1])
-	dx[0] = x[1]
-	dx[1] = -1/m*Fr + 1/m*u[0]
-	dx[2] = x[4] - x[1]
+
+	dx[0] = x[1] # vel
+	dx[1] = -1/m*Fr + 1/m*u[0] # acc
+	dx[2] = x[4] - x[1] # difference in vel
 	dx[3] = v0
 	dx[4] = 0
 	return dx
 
 
 def controller(x):
+	p_sc = 1e-1
 	Fr = f0 + f1*x[1] + f2*x[1]**2
 		
 	# CLF
@@ -63,8 +73,8 @@ def controller(x):
 
 	# CBF
 	z = x[3] - x[0]
-	h = x[2] - 1.8*x[1]
-	Bf = -math.log(h/(1+h))
+	h = x[2] - 1.8*x[1] #set function
+	Bf = -math.log(h/(1+h)) #Barrier value
 	denum = m*(1-1.8*x[1]+z)*(-1.8*x[1]+z)
 	LfB = -(1.8*Fr+m*(x[4]-x[2]))/denum
 	LgB = -1.8/denum
