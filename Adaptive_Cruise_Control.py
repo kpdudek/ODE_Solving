@@ -91,8 +91,8 @@ def controller(x):
 	n = H_acc.shape[1]
 
 
-	A_input = np.array([A_clf,A_cbf])
-	b_input = np.array([b_clf,b_cbf])
+	A_input = np.array([A_clf])#,A_cbf])
+	b_input = np.array([b_clf])#,b_cbf])
 	P = matrix(H_acc,tc='d')
 	q = matrix(F_acc,tc='d')
 	G = matrix(A_input,tc='d')
@@ -118,20 +118,21 @@ def ode_func(t,x):
 def ode_solver(TFinal):
 	time = np.linspace(0,TFinal,1000)
 	x_init = [900.0,20.0,100.0,1000.0,13.89]
-	x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45',min_step=(.01))
+	#x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45',min_step=(.01))
 	#x = odeint(ode_func,x_init,time)
 	#x = RK45(ode_func,0,x_init,TFinal,max_step=.01)		
-	#x = LSODA(ode_func,0,x_init,TFinal,min_step=.01)
+	x = LSODA(ode_func,0,x_init,TFinal,min_step=.01)
 	return x,time
 
 
 [x,time] = ode_solver(TFinal)
 
-print(x.t,x.y)
-#plt.plot(time,x)
+#print(x)
+plt.plot(x.t,x.y)
+
 #plt.legend('Position','Velocity','delta Position','Leader Pos','Leader Velocity')
 
-#plt.show()
+plt.show()
 
 
 
