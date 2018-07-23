@@ -15,12 +15,13 @@ from scipy.integrate import LSODA
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
 from mpl_toolkits.axes_grid1 import host_subplot
-import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
 from cvxopt import matrix
 from cvxopt import solvers
-
+import quadprog
 
 fig = figure(num = 0, figsize = (12, 8))#, dpi = 100)
+plt.subplot(1, 1, 1)
 fig.suptitle("Cruise Control", fontsize=12)
 
 global x0,TFinal,m,f0,f1,f2,vd,v0,eps,gamma,p_sc,Fr
@@ -37,8 +38,7 @@ vd = 100.0  # m/s
 v0 = 13.89  # m/s
 eps = 10.0  # exp convergence rate for stability
 gamma = 1  # max growth rate of Bdot leq gamma
-p_sc = 1e-5  # relatation term compensation
-		
+p_sc = 1e-15  # relatation term compensation
 
 def model(x,u):
 	# INPUTS
@@ -52,7 +52,7 @@ def model(x,u):
 
 
 	Fr = f0 + f1*x[1] + f2*x[1]**2 # aerodynamic drag
-	
+
 	dx = [0,1,2,3,4]#np.empty([5,1])
 
 	dx[0] = x[1] # vel
@@ -64,16 +64,16 @@ def model(x,u):
 
 
 def controller(x):
-	p_sc = 1e-1
+	#p_sc = 1e-5
 	Fr = f0 + f1*x[1] + f2*x[1]**2
-		
+
 	# CLF
 	phi0 = -2 * (x[1]-vd) * Fr/m + eps*(x[1]-vd)**2
 	phi1 = 2 * (x[1]-vd)/m
 
 	# CBF
 	z = x[3] - x[0]
-	h = x[2] - 1.8*x[1] #set function
+	h = x[2] - 1.8*x[1] #set function previous value -- x[2]
 	Bf = -math.log(h/(1+h)) #Barrier value
 	denum = m*(1-1.8*x[1]+z)*(-1.8*x[1]+z)
 	LfB = -(1.8*Fr+m*(x[4]-x[2]))/denum
@@ -86,125 +86,57 @@ def controller(x):
 	b_cbf = -LfB + gamma/Bf
 	H_acc = 2*np.array([[1/m**2,0],[0,p_sc]])
 	F_acc = -2*np.array([[Fr/m**2],[0]])
-	
+
 
 	n = H_acc.shape[1]
 
 
-	A_input = np.array([A_clf])#,A_cbf])
-	b_input = np.array([b_clf])#,b_cbf])
+	A_input = np.array([A_clf,A_cbf])
+	b_input = np.array([[b_clf],[b_cbf]])
 	P = matrix(H_acc,tc='d')
 	q = matrix(F_acc,tc='d')
 	G = matrix(A_input,tc='d')
 	h = matrix(b_input,tc='d')
 
-	
+	#u = quadprog.solve_qp(H_acc,F_acc,A_input,b_input)
 	sol = solvers.qp(P,q,G,h)
 	u = (sol['x'])
 	print(u)
 	return u
 
 
-def control(t,x):
+def control(x,t):
 	u = controller(x)
-	return u	
+	return u
 
 
-def ode_func(t,x):
-	dx = model(x,control(t,x))
+def ode_func(x,t):
+	dx = model(x,control(x,t))
 	return dx
 
 
 def ode_solver(TFinal):
-	time = np.linspace(0,TFinal,1000)
+	time = np.linspace(0,TFinal,100)
 	x_init = [900.0,20.0,100.0,1000.0,13.89]
-	#x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45',min_step=(.01))
-	#x = odeint(ode_func,x_init,time)
-	#x = RK45(ode_func,0,x_init,TFinal,max_step=.01)		
-	x = LSODA(ode_func,0,x_init,TFinal,min_step=.01)
+	#x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45')#,min_step=(.01))
+	x = odeint(ode_func,x_init,time,hmax=0.01,mxstep=100)
+	#x = RK45(ode_func,0,x_init,TFinal,max_step=.01)
+	#x = LSODA(ode_func,0,x_init,TFinal,min_step=.01)
 	return x,time
 
 
 [x,time] = ode_solver(TFinal)
 
-#print(x)
-plt.plot(x.t,x.y)
-
-#plt.legend('Position','Velocity','delta Position','Leader Pos','Leader Velocity')
+print(x)
+pos, = plt.plot(time,x[:,0],label=['Position'])
+vel, = plt.plot(time,x[:,1],label=['Velocity'])
+delta_pos, = plt.plot(time,x[:,2],label=['delta Position'])
+lead_pos, = plt.plot(time,x[:,3],label=['Leader Position'])
+lead_vel, = plt.plot(time,x[:,4],label=['Leader Velocity'])
+plt.legend(handles=[pos,vel,delta_pos,lead_pos,lead_vel])
 
 plt.show()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# FuncAnimation(fig,ode_solver,TFinal,blit=True)
+# plt.show()
