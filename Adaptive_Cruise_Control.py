@@ -117,7 +117,7 @@ def ode_func(x,t):
 
 def ode_solver(TFinal):
 	time = np.linspace(0,TFinal,100)
-	x_init = [900.0,20.0,100.0,1000.0,13.89]
+	x_init = [900.0,20.0,200.0,1000.0,13.89]
 	#x = solve_ivp(ode_func,(0,TFinal),x_init,method='RK45')#,min_step=(.01))
 	x = odeint(ode_func,x_init,time,hmax=0.01,mxstep=100)
 	#x = RK45(ode_func,0,x_init,TFinal,max_step=.01)
